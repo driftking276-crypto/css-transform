@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Evaluación Interactiva: Propiedad transform en CSS</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --correct: #22c55e;
+      --incorrect: #ef4444;
+      --border: #334155;
+    }
+
+    /* SISTEMA ANTICOPIA COMPATIBLE CON IOS, MAC Y ANDROID */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    input, textarea {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+
+    @media print {
+      html, body {
+        display: none !important;
+      }
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+    }
+
+    html {
+      height: -webkit-fill-available;
+    }
+
+    .quiz-container {
+      max-width: 800px;
+      width: 100%;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    header h1 {
+      color: var(--accent);
+      font-size: clamp(1.3rem, 4vw, 1.8rem);
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    #start-screen {
+      text-align: center;
+    }
+
+    .input-group {
+      margin: 20px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .input-group label {
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+
+    .input-group input {
+      width: 100%;
+      max-width: 400px;
+      padding: 12px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+      text-align: center;
+      -webkit-appearance: none;
+    }
+
+    .input-group input:focus {
+      border-color: var(--accent);
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      background-color: var(--border);
+      height: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .question-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .question-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.4;
+    }
+
+    .question-number {
+      background: var(--accent);
+      color: #000;
+      font-size: 0.8rem;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .option-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      min-height: 44px;
+    }
+
+    .option-label:hover, .option-label:active {
+      border-color: var(--accent);
+      background: #26334d;
+    }
+
+    .option-label input[type="radio"],
+    .option-label input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      gap: 10px;
+    }
+
+    .btn {
+      background-color: var(--accent);
+      color: #0f172a;
+      font-weight: bold;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s;
+      -webkit-appearance: none;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn:hover, .btn:active {
+      background-color: var(--accent-hover);
+    }
+
+    #results-screen, #reload-lock-screen {
+      display: none;
+      text-align: center;
+    }
+
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 5px solid var(--accent);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 16px auto;
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .score-circle span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+
+    .lock-notice {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--incorrect);
+      color: #fca5a5;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 16px 0;
+      font-size: 0.9rem;
+    }
+
+    .incidents-box {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: left;
+      margin-top: 16px;
+      max-height: 180px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .incidents-box h4 {
+      color: var(--accent);
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    .incidents-list {
+      list-style-type: none;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .incidents-list li {
+      padding: 4px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .teacher-panel {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .teacher-lock-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .teacher-lock-area input {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: white;
+      width: 100%;
+      max-width: 250px;
+      text-align: center;
+      -webkit-appearance: none;
+    }
+
+    code {
+      background: #0f172a;
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+    }
+
+    @media (max-width: 480px) {
+      .quiz-container {
+        padding: 16px;
+      }
+      .actions {
+        flex-direction: column;
+        gap: 12px;
+      }
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="quiz-container">
+    <header>
+      <h1>Evaluación Corinto: Propiedad CSS <code>transform</code></h1>
+      <p>Prueba aleatoria de 10 preguntas (1 punto por pregunta)</p>
+    </header>
+
+    <!-- PANTALLA INICIAL -->
+    <div id="start-screen">
+      <h2>Bienvenido a la evaluación</h2>
+      <p style="color: var(--text-muted); margin-top: 8px; font-size: 0.9rem;">Por favor, ingresa tu nombre completo para comenzar.</p>
+      
+      <div class="input-group">
+        <label for="student-name">Nombre del Estudiante:</label>
+        <input type="text" id="student-name" placeholder="Ej. Juan Pérez" autocomplete="off" autocorrect="off" autocapitalize="words">
+      </div>
+
+      <button class="btn" onclick="startQuiz()">Iniciar Evaluación</button>
+    </div>
+
+    <!-- PANTALLA DE BLOQUEO POR RECARGA -->
+    <div id="reload-lock-screen">
+      <div class="lock-notice">
+        ⛔ <strong>Acceso Bloqueado:</strong> Se detectó un intento de recarga de página o ejecución no autorizada. Requiere autorización docente para continuar.
+      </div>
+
+      <div class="teacher-panel">
+        <div class="teacher-lock-area">
+          <p style="font-size: 0.9rem; color: var(--text-muted);">Ingresa el PIN de profesor para desbloquear:</p>
+          <input type="password" id="reload-teacher-pass" placeholder="PIN del Profesor">
+          <button class="btn" style="padding: 8px 16px; font-size: 0.9rem; min-height: 38px;" onclick="unlockFromReload()">Desbloquear con PIN</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA DEL CUESTIONARIO -->
+    <div id="quiz-screen" style="display: none;">
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+
+      <div id="questions-container"></div>
+
+      <div class="actions">
+        <span id="question-counter" style="color: var(--text-muted); font-size: 0.9rem;">Pregunta 1 de 10</span>
+        <button class="btn" id="next-btn" onclick="nextQuestion()">Siguiente</button>
+      </div>
+    </div>
+
+    <!-- PANTALLA DE RESULTADOS / BLOQUEO FINAL -->
+    <div id="results-screen">
+      <h2 id="result-student-name">¡Evaluación Finalizada!</h2>
+      <div class="score-circle" id="score-circle">
+        0 / 10
+        <span>Puntos</span>
+      </div>
+      <p id="score-summary" style="margin-bottom: 12px; font-size: 1rem;"></p>
+
+      <div class="lock-notice">
+        🔒 <strong>Evaluación Bloqueada:</strong> La prueba ha finalizado. Por favor, solicita la revisión a tu profesor.
+      </div>
+
+      <div class="incidents-box">
+        <h4>Reporte de Incidencias Detectadas</h4>
+        <ul id="incidents-list" class="incidents-list">
+          <li>Sin incidencias registradas.</li>
+        </ul>
+      </div>
+
+      <div class="teacher-panel">
+        <div class="teacher-lock-area">
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Acceso docente para reiniciar o habilitar nueva prueba:</p>
+          <input type="password" id="teacher-pass" placeholder="PIN del Profesor">
+          <button class="btn" style="padding: 8px 16px; font-size: 0.9rem; min-height: 38px;" onclick="unlockExam()">Desbloquear Examen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // CLAVE / PIN DOCENTE PARA DESBLOQUEAR
+    const TEACHER_PASSWORD = "admin123";
+
+    let incidents = JSON.parse(localStorage.getItem('corinto_current_incidents') || '[]');
+
+    function saveIncidentsStorage() {
+      localStorage.setItem('corinto_current_incidents', JSON.stringify(incidents));
+    }
+
+    function logIncident(description) {
+      const timestamp = new Date().toLocaleTimeString();
+      incidents.push(`[${timestamp}] ${description}`);
+      saveIncidentsStorage();
+    }
+
+    // CONTROL DE ESTADO DE EVALUACIÓN (BLOQUEO POR RECARGA)
+    function checkLockStatus() {
+      const examStatus = localStorage.getItem('corinto_exam_status');
+      if (examStatus === 'in_progress') {
+        logIncident("Intento de recargar o reiniciar la página en medio del examen");
+        showReloadLock();
+      } else if (examStatus === 'completed') {
+        showReloadLock();
+      }
+    }
+
+    function showReloadLock() {
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('quiz-screen').style.display = 'none';
+      document.getElementById('results-screen').style.display = 'none';
+      document.getElementById('reload-lock-screen').style.display = 'block';
+    }
+
+    function unlockFromReload() {
+      const pass = document.getElementById('reload-teacher-pass').value;
+      if (pass === TEACHER_PASSWORD) {
+        localStorage.removeItem('corinto_exam_status');
+        localStorage.removeItem('corinto_current_incidents');
+        incidents = [];
+        document.getElementById('reload-teacher-pass').value = '';
+        document.getElementById('reload-lock-screen').style.display = 'none';
+        document.getElementById('start-screen').style.display = 'block';
+        alert("Examen habilitado correctamente por el profesor.");
+      } else {
+        alert("PIN incorrecto.");
+      }
+    }
+
+    // SISTEMA ANTICOPIA Y MONITOREO MULTIPLATAFORMA
+    (function enableAntiCopy() {
+      document.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        logIncident("Intento de menú contextual / clic derecho");
+      });
+
+      document.addEventListener('copy', function (e) {
+        e.preventDefault();
+        logIncident("Intento de copiar texto");
+      });
+
+      document.addEventListener('cut', function (e) {
+        e.preventDefault();
+        logIncident("Intento de cortar texto");
+      });
+
+      document.addEventListener('dragstart', function (e) {
+        e.preventDefault();
+      });
+
+      window.addEventListener('blur', function () {
+        if (localStorage.getItem('corinto_exam_status') === 'in_progress') {
+          logIncident("Cambió de pestaña o minimizó la aplicación");
+        }
+      });
+
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden && localStorage.getItem('corinto_exam_status') === 'in_progress') {
+          logIncident("La pantalla o pestaña pasó a segundo plano");
+        }
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'F12') {
+          e.preventDefault();
+          logIncident("Intento de abrir inspeccionar (F12)");
+          return false;
+        }
+
+        const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+
+        if (isCmdOrCtrl) {
+          const key = e.key.toLowerCase();
+          if (['c', 'x', 'u', 's', 'a', 'p', 'r'].includes(key)) {
+            e.preventDefault();
+            logIncident(`Atajo bloqueado: ${e.metaKey ? 'Cmd' : 'Ctrl'} + ${key.toUpperCase()}`);
+            return false;
+          }
+
+          if ((e.shiftKey || e.altKey) && ['i', 'j', 'c', 'r'].includes(key)) {
+            e.preventDefault();
+            logIncident("Intento de inspeccionar o recargar");
+            return false;
+          }
+        }
+      });
+    })();
+
+    const WEB3FORMS_ACCESS_KEY = "8f4f5989-2fcc-48c8-be20-1cfb32e0620f";
+
+    const allQuestions = [
+      {
+        question: "¿Qué nos permite hacer la propiedad 'transform' en CSS según la lección?",
+        type: "single",
+        options: [
+          "Modificar únicamente el color y sombra de un elemento HTML.",
+          "Mover, rotar, inclinar o modificar las dimensiones de un objeto en 2D o 3D.",
+          "Cambiar la tipografía y alineación de textos dentro de una caja.",
+          "Crear animaciones automáticas sin necesidad de eventos ni transiciones."
+        ],
+        answer: [1]
+      },
+      {
+        question: "¿Cuál es la función principal de 'translate' en 2D?",
+        type: "single",
+        options: [
+          "Girar el objeto a la izquierda o derecha.",
+          "Inclinar el objeto hacia adelante o hacia atrás.",
+          "Mover el objeto en cuestión en los ejes X y Y.",
+          "Cambiar el tamaño proporcional del objeto."
+        ],
+        answer: [2]
+      },
+      {
+        question: "En 'rotate(45deg)', ¿en qué sentido gira el objeto según los valores positivos?",
+        type: "single",
+        options: [
+          "En el sentido de las agujas del reloj.",
+          "En sentido contrario a las agujas del reloj.",
+          "Hacia el fondo de la pantalla (eje Z).",
+          "Hacia abajo volteando la imagen."
+        ],
+        answer: [0]
+      },
+      {
+        question: "Si aplicamos 'scale(2)' a una caja, ¿qué efecto conseguimos?",
+        type: "single",
+        options: [
+          "Se mueve 2 píxeles hacia la derecha.",
+          "El tamaño de la caja se reduce a la mitad.",
+          "El tamaño de la caja se duplica.",
+          "Se inclina 2 grados en el eje X."
+        ],
+        answer: [2]
+      },
+      {
+        question: "Para hacer un objeto a la mitad de su tamaño original con 'scale', ¿qué valor se debe usar?",
+        type: "single",
+        options: [
+          "scale(-2)",
+          "scale(0.5)",
+          "scale(50deg)",
+          "scale(0)"
+        ],
+        answer: [1]
+      },
+      {
+        question: "¿Qué efecto produce la función 'skew'?",
+        type: "single",
+        options: [
+          "Voltea la caja hacia abajo.",
+          "Aumenta la sombra del contenedor.",
+          "Inclina el objeto hacia atrás o adelante según el valor declarado.",
+          "Desplaza la caja en el eje Z."
+        ],
+        answer: [2]
+      },
+      {
+        question: "¿En qué unidad de medida se deben especificar los valores para 'rotate' y 'skew'?",
+        type: "single",
+        options: [
+          "En píxeles (px)",
+          "En porcentajes (%)",
+          "En grados (deg)",
+          "Sin unidad (números puros)"
+        ],
+        answer: [2]
+      },
+      {
+        question: "¿Cuál es el orden correcto de los parámetros en la función 'matrix()' explicada por David?",
+        type: "single",
+        options: [
+          "matrix(translateX, translateY, scaleX, scaleY, skewX, skewY)",
+          "matrix(scaleX, skewY, skewX, scaleY, translateX, translateY)",
+          "matrix(rotateX, rotateY, rotateZ, scaleX, scaleY, translate)",
+          "matrix(skewX, skewY, scaleX, scaleY, translateX, translateY)"
+        ],
+        answer: [1]
+      },
+      {
+        question: "Al utilizar 'matrix()', ¿se deben incluir unidades como 'px' o 'deg' en los parámetros?",
+        type: "single",
+        options: [
+          "Sí, es obligatorio poner px para traslación y deg para inclinación.",
+          "No, en matrix no es necesario especificar unidades.",
+          "Solo se requiere poner 'px' en los últimos dos valores.",
+          "Solo se requiere poner '%' en todos los valores."
+        ],
+        answer: [1]
+      },
+      {
+        question: "¿Qué función 3D produce el efecto de voltear una imagen hacia arriba o hacia abajo?",
+        type: "single",
+        options: [
+          "rotateY()",
+          "rotateX()",
+          "rotateZ()",
+          "skewX()"
+        ],
+        answer: [1]
+      },
+      {
+        question: "¿Qué función 3D equivale funcionalmente a la rotación 2D estándar 'rotate()'?",
+        type: "single",
+        options: [
+          "rotateX()",
+          "rotateY()",
+          "rotateZ()",
+          "matrix3d()"
+        ],
+        answer: [2]
+      },
+      {
+        question: "¿Cuál es el punto de origen de transformación determinado por defecto en un objeto?",
+        type: "single",
+        options: [
+          "La esquina superior izquierda (top left)",
+          "El centro del objeto (center / 50% 50%)",
+          "La esquina inferior derecha (bottom right)",
+          "La posición 0,0 del cuerpo (body)"
+        ],
+        answer: [1]
+      },
+      {
+        question: "¿Con qué propiedad de CSS podemos cambiar el punto de anclaje u origen de las transformaciones?",
+        type: "single",
+        options: [
+          "transform-position",
+          "transform-origin",
+          "perspective-origin",
+          "origin-point"
+        ],
+        answer: [1]
+      },
+      {
+        question: "¿Dónde se debe declarar la propiedad 'perspective' para lograr el efecto de profundidad 3D correctamente?",
+        type: "single",
+        options: [
+          "Directamente en el elemento que tiene la clase :hover.",
+          "Dentro del contenedor padre (por ejemplo, en el 'body' o una caja contenedora).",
+          "Dentro de la función rotateY() como parámetro.",
+          "En la clase .back-box únicamente."
+        ],
+        answer: [1]
+      },
+      {
+        question: "¿Qué representa el valor en píxeles asignado a la propiedad 'perspective' (ej. 800px)?",
+        type: "single",
+        options: [
+          "La anchura máxima que puede tomar la caja al girar.",
+          "La distancia virtual a la que se encuentra el observador respecto a la pantalla.",
+          "El ángulo de inclinación de la sombra en 3D.",
+          "El tiempo que tarda la animación en completarse."
+        ],
+        answer: [1]
+      },
+      {
+        question: "¿Para qué se utilizó la caja '.back-box' fija detrás de '.box' en el tutorial?",
+        type: "single",
+        options: [
+          "Para evitar que el texto se desborde del navegador.",
+          "Para servir de referencia visual y comparar el 'antes y después' del transform.",
+          "Para sostener la perspectiva 3D del contenedor.",
+          "Para aplicar la sombra paralela automáticamente."
+        ],
+        answer: [1]
+      },
+      {
+        question: "Selecciona TODAS las funciones que correspondan a transformaciones en 2D: (Selección múltiple)",
+        type: "multiple",
+        options: [
+          "translate(x, y)",
+          "rotateX(deg)",
+          "scale(x, y)",
+          "skew(x, y)"
+        ],
+        answer: [0, 2, 3]
+      },
+      {
+        question: "¿Qué propiedad complementaria de CSS utilizó David para que el movimiento en el :hover no fuera brusco?",
+        type: "single",
+        options: [
+          "animation",
+          "transition",
+          "display",
+          "box-shadow"
+        ],
+        answer: [1]
+      }
+    ];
+
+    let currentStudentName = "";
+    let selectedQuestions = [];
+    let currentQuestionIndex = 0;
+    let userAnswers = [];
+
+    function getRandomQuestions(numQuestions = 10) {
+      const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, numQuestions);
+    }
+
+    function startQuiz() {
+      const nameInput = document.getElementById('student-name').value.trim();
+      if (!nameInput) {
+        alert("Por favor ingresa tu nombre para continuar.");
+        return;
+      }
+
+      // Marcar estado del examen como en progreso
+      localStorage.setItem('corinto_exam_status', 'in_progress');
+
+      currentStudentName = nameInput;
+      selectedQuestions = getRandomQuestions(10);
+      currentQuestionIndex = 0;
+      userAnswers = new Array(10).fill(null);
+
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('quiz-screen').style.display = 'block';
+
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const q = selectedQuestions[currentQuestionIndex];
+      const container = document.getElementById('questions-container');
+      
+      const progressPercent = ((currentQuestionIndex + 1) / selectedQuestions.length) * 100;
+      document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+      document.getElementById('question-counter').innerText = `Pregunta ${currentQuestionIndex + 1} de 10`;
+
+      let optionsHTML = '';
+      const inputType = q.type === 'single' ? 'radio' : 'checkbox';
+
+      q.options.forEach((opt, idx) => {
+        const isChecked = userAnswers[currentQuestionIndex] && userAnswers[currentQuestionIndex].includes(idx);
+        optionsHTML += `
+          <label class="option-label" onclick="">
+            <input type="${inputType}" name="option" value="${idx}" ${isChecked ? 'checked' : ''} onchange="saveAnswer()">
+            <span>${opt}</span>
+          </label>
+        `;
+      });
+
+      container.innerHTML = `
+        <div class="question-card">
+          <div class="question-title">
+            <span class="question-number">P${currentQuestionIndex + 1}</span>
+            <span>${q.question}</span>
+          </div>
+          <div class="options">
+            ${optionsHTML}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('next-btn').innerText = (currentQuestionIndex === selectedQuestions.length - 1) ? 'Finalizar' : 'Siguiente';
+    }
+
+    function saveAnswer() {
+      const selectedInputs = document.querySelectorAll('input[name="option"]:checked');
+      const selectedValues = Array.from(selectedInputs).map(i => parseInt(i.value));
+      userAnswers[currentQuestionIndex] = selectedValues.length > 0 ? selectedValues : null;
+    }
+
+    function nextQuestion() {
+      if (!userAnswers[currentQuestionIndex]) {
+        alert('Por favor selecciona una respuesta antes de continuar.');
+        return;
+      }
+
+      if (currentQuestionIndex < selectedQuestions.length - 1) {
+        currentQuestionIndex++;
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      // Marcar estado del examen como completado
+      localStorage.setItem('corinto_exam_status', 'completed');
+
+      document.getElementById('quiz-screen').style.display = 'none';
+      document.getElementById('results-screen').style.display = 'block';
+
+      let score = 0;
+
+      selectedQuestions.forEach((q, idx) => {
+        const userAns = userAnswers[idx] || [];
+        const correctAns = q.answer;
+
+        const isCorrect = userAns.length === correctAns.length && userAns.every(val => correctAns.includes(val));
+        if (isCorrect) {
+          score += 1;
+        }
+      });
+
+      document.getElementById('result-student-name').innerText = `Resultado de: ${currentStudentName}`;
+      document.getElementById('score-circle').childNodes[0].nodeValue = `${score} / 10 `;
+      document.getElementById('score-summary').innerText = `Obtuviste ${score} de 10 puntos posibles.`;
+
+      const incidentsList = document.getElementById('incidents-list');
+      if (incidents.length === 0) {
+        incidentsList.innerHTML = '<li>Sin incidencias registradas durante el examen.</li>';
+      } else {
+        incidentsList.innerHTML = incidents.map(inc => `<li>⚠️ ${inc}</li>`).join('');
+      }
+
+      sendResultsToWeb3Forms(currentStudentName, score, incidents);
+    }
+
+    function sendResultsToWeb3Forms(studentName, score, incidentsList) {
+      const formData = {
+        access_key: "8f4f5989-2fcc-48c8-be20-1cfb32e0620f",
+        subject: `Resultado de evaluación: ${studentName}`,
+        from_name: "Evaluación CSS Transform",
+        Estudiante: studentName,
+        Puntaje: `${score} / 10`,
+        Fecha: new Date().toLocaleString(),
+        Dispositivo: navigator.userAgent,
+        Incidencias: incidentsList.length > 0 ? incidentsList.join('\n') : "Sin incidencias"
+      };
+
+      fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(async (response) => {
+        let json = await response.json();
+        if (response.status === 200) {
+          console.log("Reporte enviado con éxito:", json.message);
+        } else {
+          console.error("Error enviando reporte:", json.message);
+        }
+      })
+      .catch(error => {
+        console.error("Error de conexión:", error);
+      });
+    }
+
+    function unlockExam() {
+      const pass = document.getElementById('teacher-pass').value;
+      if (pass === TEACHER_PASSWORD) {
+        localStorage.removeItem('corinto_exam_status');
+        localStorage.removeItem('corinto_current_incidents');
+        incidents = [];
+        document.getElementById('student-name').value = '';
+        document.getElementById('teacher-pass').value = '';
+        document.getElementById('results-screen').style.display = 'none';
+        document.getElementById('start-screen').style.display = 'block';
+        alert("Examen desbloqueado correctamente por el profesor.");
+      } else {
+        alert("PIN incorrecto.");
+      }
+    }
+
+    // Verificar si la página fue recargada previamente
+    checkLockStatus();
+  </script>
+</body>
+</html>
